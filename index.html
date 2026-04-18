@@ -139,11 +139,11 @@ p.instruction { font-size: 14px; color: var(--medio); line-height: 1.7; margin-b
 
 /* ══ RETO 6: ORDENA ══ */
 #sort-list { list-style: none; margin-bottom: 14px; }
-.sort-item { display: flex; align-items: center; gap: 10px; background: white; border: 1.5px solid var(--rosa-claro); border-radius: 10px; padding: 10px 14px; margin-bottom: 6px; cursor: grab; transition: all 0.2s; font-size: 13px; color: var(--oscuro); }
+.sort-item { display: flex; align-items: center; gap: 10px; background: white; border: 1.5px solid var(--rosa-claro); border-radius: 10px; padding: 10px 14px; margin-bottom: 6px; cursor: pointer; transition: all 0.2s; font-size: 13px; color: var(--oscuro); user-select: none; }
 .sort-item:hover { border-color: var(--rosa); box-shadow: 0 3px 10px rgba(192,82,106,0.2); }
-.sort-item.dragging { opacity: 0.5; transform: scale(0.98); }
+.sort-item.selected { border-color: var(--rosa); background: var(--rosa-palido); box-shadow: 0 4px 16px rgba(192,82,106,0.35); transform: scale(1.02); }
 .sort-item.drag-over { border-color: var(--dorado); background: #fff8f0; }
-.sort-handle { font-size: 16px; color: var(--rosa-claro); cursor: grab; flex-shrink: 0; }
+.sort-handle { font-size: 16px; color: var(--rosa-claro); flex-shrink: 0; }
 .sort-num { font-size: 11px; background: var(--rosa-palido); color: var(--rosa); border-radius: 50%; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-weight: 600; }
 .sort-item.correct-pos .sort-num { background: #eafaf1; color: #2d8a5e; }
 
@@ -236,7 +236,7 @@ p.instruction { font-size: 14px; color: var(--medio); line-height: 1.7; margin-b
   <h1 class="main-title">Para la niña más hermosa<br>del universo</h1>
   <p class="cover-subtitle">Una aventura de amor para Camila</p>
   <p style="font-size:14px;color:var(--medio);text-align:center;max-width:420px;line-height:1.7;margin-bottom:32px;">10 retos, 10 recuerdos, 1 promesa.<br>Este es mi regalo para ti, amor mío. 💕</p>
-  <button class="btn" onclick="startGame()">Comenzar mi aventura 🌸</button>
+  <button class="btn" onclick="startGame()">Comenzar nuestra aventura 🌸</button>
 </div>
 
 <!-- ══ RETO 1: PUZZLE ══ -->
@@ -933,29 +933,33 @@ function resetMaze(){ mazePlayer={x:0,y:0}; drawMaze(); }
 //  RETO 6: ORDENA
 // ══════════════════════════════════════════════════
 const sortEvents=['Salimos de Bogotá','Nos pusimos nuestros impermeables','Llovió como si no hubiera un mañana','Paramos a comer y tomar alguito','Llegamos al Puente de Boyacá','Dejamos las motos en una montaña','Nos perdimos entre nosotros','Cantamos juntitos escuchando a Andrés Cepeda','Nos perdimos buscando la moto','Esperamos a los demás','Ariel se enojó','Salimos para Bogotá','Dormimos con mucho frío pero arrunchados'];
-let sortCurrent=[...sortEvents], sortDragSrc=null;
+let sortCurrent=[...sortEvents], sortSelected=null;
 
 function initReto6(){ shuffleSort(); }
-function shuffleSort(){ sortCurrent=[...sortEvents].sort(()=>Math.random()-0.5); renderSort(); }
+function shuffleSort(){ sortCurrent=[...sortEvents].sort(()=>Math.random()-0.5); sortSelected=null; renderSort(); }
 function renderSort(){
   const list=document.getElementById('sort-list'); list.innerHTML='';
   sortCurrent.forEach((evt,i)=>{
-    const li=document.createElement('li'); li.className='sort-item'; li.draggable=true;
-    li.innerHTML=`<span class="sort-handle">⠿</span><span class="sort-num">${i+1}</span><span>${evt}</span>`;
-    li.addEventListener('dragstart',()=>{ sortDragSrc=i; li.classList.add('dragging'); });
-    li.addEventListener('dragend',()=>li.classList.remove('dragging'));
-    li.addEventListener('dragover',e=>{ e.preventDefault(); li.classList.add('drag-over'); });
-    li.addEventListener('dragleave',()=>li.classList.remove('drag-over'));
-    li.addEventListener('drop',e=>{ e.preventDefault(); li.classList.remove('drag-over'); if(sortDragSrc!==i) swapSort(sortDragSrc,i); });
-    li.addEventListener('touchstart',e=>{ sortDragSrc=i; li.classList.add('dragging'); },{passive:true});
-    li.addEventListener('touchend',e=>{
-      li.classList.remove('dragging');
-      const el=document.elementFromPoint(e.changedTouches[0].clientX,e.changedTouches[0].clientY);
-      const target=el&&el.closest('.sort-item');
-      if(target){ const items=[...document.querySelectorAll('.sort-item')]; const ti=items.indexOf(target); if(ti>=0&&ti!==sortDragSrc) swapSort(sortDragSrc,ti); }
-    });
+    const li=document.createElement('li'); li.className='sort-item'+(i===sortSelected?' selected':''); li.dataset.idx=i;
+    li.innerHTML=`<span class="sort-handle">👆</span><span class="sort-num">${i+1}</span><span>${evt}</span>`;
+    li.addEventListener('click',()=>sortTap(i));
     list.appendChild(li);
   });
+}
+function sortTap(i){
+  if(sortSelected===null){
+    // Primera selección
+    sortSelected=i;
+    renderSort();
+  } else if(sortSelected===i){
+    // Deseleccionar si toca la misma
+    sortSelected=null;
+    renderSort();
+  } else {
+    // Segunda selección: intercambiar
+    swapSort(sortSelected,i);
+    sortSelected=null;
+  }
 }
 function swapSort(a,b){ [sortCurrent[a],sortCurrent[b]]=[sortCurrent[b],sortCurrent[a]]; renderSort(); }
 function checkSort(){
